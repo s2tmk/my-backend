@@ -6,9 +6,8 @@ import { echoHelloWorld } from "./hello";
 
 dotenv.config();
 
-const port = process.env.PORT || 5173;
-const localUrl = `http://localhost:${port}`;
-const frontendUrl = process.env.FRONTEND_URL || localUrl;
+const localFrontendUrl = `http://localhost:5173`;
+const frontendUrl = process.env.FRONTEND_URL ?? "";
 
 const initApp = () => {
   const app: express.Express = express();
@@ -22,7 +21,7 @@ const initApp = () => {
 
   app.use(
     cors({
-      origin: [frontendUrl, localUrl],
+      origin: [frontendUrl, localFrontendUrl],
       credentials: true,
       optionsSuccessStatus: 200,
     })
@@ -40,7 +39,7 @@ export async function handler(event: Object, context: Object) {
 // ローカルデバッグ用
 if (require.main === module) {
   const app = initApp();
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  app.listen(3000, () => {
+    console.log(`Server is running on http://localhost:3000`);
   });
 }
