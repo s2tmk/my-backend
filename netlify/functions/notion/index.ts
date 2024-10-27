@@ -6,12 +6,33 @@ export const getNotionData = async (req: Request, res: Response) => {
   const notionClient = new Client({
     auth: process.env.NOTION_IG_SECRET,
   });
-  const { userId: targetUserId } = req.query;
-  if (typeof targetUserId !== "string") {
-    res.status(400).send("Invalid userId");
+  const { token } = req.query;
+
+  console.log({ token });
+
+  if (typeof token !== "string") {
+    res.status(400).send("Invalid token");
     return;
   }
-  const response = await notionClient.databases.query({
+
+  // POST https://api.line.me/oauth2/v2.1/verifyでLINEのIDトークンを検証
+  const lineResponse = await fetch(`https://api.line.me/oauth2/v2.1/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      id_token: token,
+      client_id: process.env.LINE_CHANNEL_ID!,
+    }),
+  });
+  const lineResponseJson = await lineResponse.json();
+
+  console.log(lineResponseJson);
+
+  const targetUserId = lineResponseJson["sub"];
+
+  const notionResponse = await notionClient.databases.query({
     database_id: process.env.NOTION_DB_ID!,
     filter: {
       property: "userId",
@@ -21,7 +42,9 @@ export const getNotionData = async (req: Request, res: Response) => {
     },
   });
 
-  const properties = JSON.parse(JSON.stringify(response.results[0])).properties;
+  const properties = JSON.parse(
+    JSON.stringify(notionResponse.results[0])
+  ).properties;
   const userId = properties.userId.rich_text[0].plain_text;
   const point = properties.point.number;
 
